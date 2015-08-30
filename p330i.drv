@@ -1,0 +1,27 @@
+#include <font.defs>
+#include <media.defs>
+
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Zebra"
+ModelName "P330i"
+Version 1.0
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 100 rastertop330i
+
+#media "CR-80" 3.375in 2.125in
+
+// Supported page sizes
+*MediaSize CR-80
+
+// Supported resolutions
+*Resolution cmyk 8 0 0 0 "300dpi/300 DPI"
+
+ColorDevice true
+
+*ColorModel cmyk planar 0
+
+// Specify the name of the PPD file we want to generate...
+PCFileName "zebrap330i.ppd"
