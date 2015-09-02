@@ -1,17 +1,22 @@
 #include <font.defs>
 #include <media.defs>
 
-Font *
+Font Arial Special "(1.0)" Special ROM
+Font Arial-Bold Special "(1.0)" Special ROM
 
 // Manufacturer, model name, and version
 Manufacturer "Zebra"
 ModelName "P330i"
 Version 1.0
 
+DriverType custom
+
 // Each filter provided by the driver...
 Filter application/vnd.cups-raster 100 rastertop330i
 
 #media "CR-80" 3.375in 2.125in
+
+HWMargins 0 0 0 0
 
 // Supported page sizes
 *MediaSize CR-80
@@ -19,9 +24,9 @@ Filter application/vnd.cups-raster 100 rastertop330i
 // Supported resolutions
 *Resolution cmyk 8 0 0 0 "300dpi/300 DPI"
 
-ColorDevice true
+ColorDevice yes
 
-*ColorModel cmyk planar 0
+*ColorModel YMCK/Color ymck planar 3
 
 // Specify the name of the PPD file we want to generate...
-PCFileName "zebrap330i.ppd"
+PCFileName "p330i.ppd"
