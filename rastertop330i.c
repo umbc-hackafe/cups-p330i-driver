@@ -30,9 +30,8 @@
  */
 
 #include <cups/cups.h>
-#include <cups/string.h>
-#include <cups/i18n.h>
-#include "raster.h"
+#include <cups/language.h>
+#include <cupsfilters/raster.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -71,9 +70,7 @@ void	StartPage(ppd_file_t *ppd, cups_page_header_t *header);
 void	EndPage(ppd_file_t *ppd, cups_page_header_t *header);
 void	CancelJob(int sig);
 void	OutputLine(ppd_file_t *ppd, cups_page_header_t *header, int y);
-void	PCLCompress(unsigned char *line, int length);
-void	ZPLCompress(char repeat_char, int repeat_count);
-
+void    BitmapCompress(char *input, size_t input_len, char *output);
 /*
  * 'StartPage()' - Start a page of graphics.
  */
@@ -159,7 +156,7 @@ StartPage(ppd_file_t         *ppd,	/* I - PPD file */
 
   /* Clear varnish buffer */
   fprintf(stderr, "vF\n");
-  fputs("\x1BvF\x0D");
+  puts("\x1BvF\x0D");
 
   /* Clear black buffer */
   fprintf(stderr, "F\n");
@@ -264,13 +261,13 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 					/* Hex digits */
 
   switch (ModelNumber) {
-    case ZEBRA_EPL_LINE :
+    case 1 :
         printf("\033g%03d", header->cupsBytesPerLine);
 	fwrite(Buffer, 1, header->cupsBytesPerLine, stdout);
 	fflush(stdout);
         break;
 
-    case ZEBRA_EPL_PAGE :
+    case 2 :
         if (Buffer[0] || memcmp(Buffer, Buffer + 1, header->cupsBytesPerLine))
 	{
           printf("GW0,%d,%d,1\n", y, header->cupsBytesPerLine);
@@ -281,7 +278,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	}
         break;
 
-    case ZEBRA_ZPL :
+    case 3 :
        /*
 	* Determine if this row is the same as the previous line.
         * If so, output a ':' and return...
@@ -321,7 +318,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	    repeat_count ++;
 	  else
 	  {
-	    ZPLCompress(repeat_char, repeat_count);
+	    //ZPLCompress(repeat_char, repeat_count);
 	    repeat_char  = *compptr;
 	    repeat_count = 1;
 	  }
@@ -342,7 +339,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	    putchar(',');
 	}
 	else
-	  ZPLCompress(repeat_char, repeat_count);
+	  //ZPLCompress(repeat_char, repeat_count);
 
 	fflush(stdout);
 
@@ -354,7 +351,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	LastSet = 1;
         break;
 
-    case ZEBRA_CPCL :
+    case 4 :
         if (Buffer[0] || memcmp(Buffer, Buffer + 1, header->cupsBytesPerLine))
 	{
 	  printf("CG %u 1 0 %d ", header->cupsBytesPerLine, y);
@@ -364,7 +361,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	}
 	break;
 
-    case INTELLITECH_PCL :
+    case 5 :
 	if (Buffer[0] ||
             memcmp(Buffer, Buffer + 1, header->cupsBytesPerLine - 1))
         {
@@ -375,7 +372,7 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 	    LastSet = 0;
 	  }
 
-          PCLCompress(Buffer, header->cupsBytesPerLine);
+          //PCLCompress(Buffer, header->cupsBytesPerLine);
 	}
 	else
 	  Feed ++;
@@ -404,7 +401,7 @@ void BitmapCompress(char *input, size_t input_len, char *output) {
       }
 
       if (same_count == 127) {
-	output[off++] = FLAG_RPT | same_count;
+	output[off++] = 0;//FLAG_RPT | same_count;
 	output[off++] = last;
 	same_count = 0;
       }
@@ -412,7 +409,7 @@ void BitmapCompress(char *input, size_t input_len, char *output) {
       same_count++;
     } else {
       if (same_count) {
-	output[off++] = FLAG_RPT | same_count;
+	output[off++] = 0;//FLAG_RPT | same_count;
 	output[off++] = last;
 	same_count = 0;
       }
@@ -436,7 +433,7 @@ void BitmapCompress(char *input, size_t input_len, char *output) {
   }
 
   if (same_count) {
-    output[off++] = FLAG_RPT | same_count;
+    output[off++] = 0;//FLAG_RPT | same_count;
     output[off++] = last;
     same_count = 0;
   }
@@ -475,7 +472,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     * and return.
     */
 
-    fprintf(stderr, _("Usage: %s job-id user title copies options [file]\n"),
+    fprintf(stderr, ("Usage: %s job-id user title copies options [file]\n"),
             argv[0]);
     return (1);
   }
@@ -550,7 +547,7 @@ main(int  argc,				/* I - Number of command-line arguments */
       */
 
       if ((y & 15) == 0)
-        fprintf(stderr, _("INFO: Printing page %d, %d%% complete...\n"), Page,
+        fprintf(stderr, ("INFO: Printing page %d, %d%% complete...\n"), Page,
 	        100 * y / header.cupsHeight);
 
      /*
@@ -605,9 +602,9 @@ main(int  argc,				/* I - Number of command-line arguments */
   */
 
   if (Page == 0)
-    fputs(_("ERROR: No pages found!\n"), stderr);
+    fputs(("ERROR: No pages found!\n"), stderr);
   else
-    fputs(_("INFO: Ready to print.\n"), stderr);
+    fputs(("INFO: Ready to print.\n"), stderr);
 
   return (Page == 0);
 }
